@@ -12,18 +12,19 @@
 <body>
     <div class="container mb-3">
         <div class="card" style="width: 18rem;">
-            <img class="card-img-top d-none" src="" alt="Card image cap" data-shiny-url="">
+            <img class="card-img-top d-none" id="poke-img" src="" alt="Card image cap" data-shiny-url="">
             <div class="card-body">
                 <h5 class="card-title" style=" text-transform: capitalize;">Lorepokemon</h5>
-                <a href="#" class="btn btn-success">Change to Shiny</a>
+                <a href="#" id="change-shiny" class="btn btn-success">Change to Shiny</a>
             </div>
         </div>
     </div>
     <div class="container">
         <div class="input-group mb-3">
             <span class="input-group-text" id="selected-pokemon-label">Which pokemon do you want to display?</span>
-            <select id="select-pokemon" class="form-select" aria-label="selected pokemon" aria-describedby="selected-pokemon-label">
-                <option selected>Select one pokemon</option>
+            <select id="select-pokemon" class="form-select" aria-label="selected pokemon"
+                aria-describedby="selected-pokemon-label">
+                <option value="" selected>Select one pokemon</option>
                 <option value="pikachu">Pikachu</option>
                 <option value="charmander">Charmander</option>
                 <option value="luxio">Luxio</option>
@@ -32,14 +33,72 @@
     </div>
 </body>
 <script>
-    // 1. Cuando cambie el valor del selector, tenemos que detectar que opción hemos escogido. Probad que sois capaces de recuperar el valor seleccionado por el usuario con un console.log
+    const select = document.querySelector("#select-pokemon");
+    select.addEventListener("change", changePokemon);
 
-    // 2. En función de la opción escogida, 'montaremos' una URL
-    // https://pokeapi.co/api/v2/pokemon/pikachu
-    // https://pokeapi.co/api/v2/pokemon/luxio
+    function changePokemon(event) {
+        let pokeName = event.target.value;
+        if (pokeName == "") {
+            throwError(0);
+            return;
+        }
+        fetch(`https://pokeapi.co/api/v2/pokemon/${pokeName}`)
+            .then(response => response.json())
+            .then(data => {
+                loadData(data);
+            })
+            .catch(error => throwError(1));
+    }
 
-    // 3. Utilizar la función fetch para hacer la llamada a esa URL
-    // y procesar los datos. Significa, asignar al <h5> del DOM el nombre del pokemon que hemos recuperado de la llamada. Y en la etiqueta <img> debemos establecer el atricuto 'src' con el valor de la URL donde se ubica la imagen del pokemon
+    function loadData(pokemon) {
+        const pokeImg = document.querySelector("#poke-img");
+        const cardTitle = document.querySelector(".card-title");
+
+        let changeShiny = document.querySelector("#change-shiny");
+        changeShiny.replaceWith(changeShiny.cloneNode(true));
+        changeShiny = document.querySelector("#change-shiny");
+
+        pokeImg.src = pokemon.sprites.front_default;
+        pokeImg.classList.remove("d-none");
+        cardTitle.textContent = pokemon.name;
+
+        changeShiny.addEventListener("click", () => toggleShiny(pokemon));
+    }
+
+    function toggleShiny(pokemon) {
+        const pokeImg = document.querySelector("#poke-img");
+        const changeShinyBtn = document.querySelector("#change-shiny");
+        const normal = pokemon.sprites.front_default;
+        const shiny = pokemon.sprites.front_shiny;
+        const isShiny = pokeImg.src == shiny;
+
+        if (isShiny) {
+            pokeImg.src = normal;
+            changeShinyBtn.textContent = "Change to Shiny";
+        } else {
+            pokeImg.src = shiny;
+            changeShinyBtn.textContent = "Change to Normal";
+        }
+    }
+
+    function throwError(errorCode) {
+        switch (errorCode) {
+            case 0: // Pokemon not selected = kill all user interactions.
+                killAll();
+                break;
+            case 1: // Throw alert when pokemon does not exist. And kill all interactions.
+                killAll();
+                alert("That pokemon does not exist.");
+                break;
+        }
+    }
+
+    function killAll() {
+        document.querySelector("#poke-img").src = "";
+        document.querySelector("#poke-img").classList.add("d-none");
+        document.querySelector(".card-title").textContent = "Lorepokemon";
+        document.querySelector("#change-shiny").replaceWith(document.querySelector("#change-shiny").cloneNode(true));
+    }
 </script>
 
 </html>
